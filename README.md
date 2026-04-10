@@ -94,9 +94,3 @@ uv run python main.py
 ## 技术栈
 
 - Python 3.12+
-- [uv](https://github.com/astral-sh/uv) - 依赖管理
-- [pydantic](https://docs.pydantic.dev/) - 配置模型
-- [openai](https://github.com/openai/openai-python) - OpenAI SDK
-- [anthropic](https://github.com/anthropics/anthropic-sdk-python) - Anthropic SDK
-- [ruff](https://github.com/astral-sh/ruff) - Linter / Formatter
-- [ty](https://github.com/astral-sh/ty) - 类型检查
