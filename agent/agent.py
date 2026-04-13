@@ -1,14 +1,15 @@
+import logging
 from dataclasses import dataclass
 from enum import Enum, auto
-
-import os
 from pathlib import Path
 
 from agent.config import get_config
 from agent.llm.provider import ProviderRegistry
+from agent.tools.tool_manager import registry
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _DEFAULT_PROMPT_PATH = _PROJECT_ROOT / "resources" / "prompt" / "Research.txt"
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -64,6 +65,21 @@ class Agent:
         self.current_turn = 0
         self.messages = []
 
+        #register tools
+        self.tool_register()
+
+    def tool_register(self):
+        _modules = [
+            "agent.tools.file_tool",
+            "agent.tools.terminal_tool",
+        ]
+        import importlib
+        for mod_name in _modules:
+            try:
+                importlib.import_module(mod_name)
+            except Exception as e:
+                logger.warning("Could not import tool module %s: %s", mod_name, e)
+
     def _invoke_llm(self, messages) -> Decision:
         provider = ProviderRegistry.get(get_config().provider)
         decision = provider.complete(messages)
@@ -71,14 +87,10 @@ class Agent:
         return decision
 
     def _invoke_tool(self, tool_name: str, tool_input: str) -> str:
-        func_map = {
-            "search": lambda: "Always Sunny",
-            "calculator": lambda: "calculator",
-            "web_search": lambda: "web_search",
-            "wikipedia": lambda: "wikipedia",
-            "wolfram_alpha": lambda: "wolfram_alpha",
-        }
-        return func_map[tool_name]()
+        tool = registry.get(tool_name)
+        if not tool:
+            raise ValueError(f"Unknown tool: {tool_name}")
+        return tool.invoke(tool_input)
 
     def _build_input(self, input: str) -> list:
         return [
@@ -109,10 +121,11 @@ class Agent:
                 return self.messages
 
             # tool_use
-            for tool_name in decision.tool_use:
-                tool_result = self._invoke_tool(tool_name, "")
+            for tool in decision.tool_calls:
+                fn = tool['function']
+                tool_result = self._invoke_tool(fn['name'], fn['arguments'])
                 # 从 decision.tool_calls 中获取对应的 tool_call_id
-                self._append_tool_result(decision, tool_name, tool_result)
+                self._append_tool_result(decision, fn['name'], tool_result)
 
     def _append_tool_result(self, decision: Decision, tool_name, tool_result: str):
         tool_call_id = ""

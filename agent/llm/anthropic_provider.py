@@ -8,6 +8,7 @@ from agent.agent_type import Decision
 from agent.config import get_config
 from agent.llm.provider import LLMProvider, ProviderRegistry
 
+ANTHROPIC_PROVIDER_NAME = "anthropic"
 
 class AnthropicProvider(LLMProvider):
     """基于 Anthropic SDK 的 provider 实现。
@@ -91,13 +92,11 @@ class AnthropicProvider(LLMProvider):
         )
 
         text = ""
-        tool_use = []
         tool_calls = []
         for block in response.content:
             if block.type == "text":
                 text += block.text
             elif block.type == "tool_use":
-                tool_use.append(block.name)
                 tool_calls.append({
                     "id": block.id,
                     "type": "function",
@@ -107,14 +106,13 @@ class AnthropicProvider(LLMProvider):
                     }
                 })
 
-        next_step = "tool_use" if tool_use else "done"
+        next_step = "tool_use" if tool_calls else "done"
 
         return Decision(
-            tool_use=tool_use,
             message=text,
             next_step=next_step,
             tool_calls=tool_calls,
         )
 
 
-ProviderRegistry.register("anthropic", AnthropicProvider)
+ProviderRegistry.register(ANTHROPIC_PROVIDER_NAME, AnthropicProvider)

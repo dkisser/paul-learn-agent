@@ -9,10 +9,12 @@ dependencies = [
     "openai>=2.31.0",
     "pydantic>=2.12.5",
     "python-dotenv>=1.2.2",
+    "rich>=14.3.0",
 ]
 
 [dependency-groups]
 dev = [
+    "pytest>=9.0.3",
     "ruff>=0.15.10",
     "ty>=0.0.29",
 ]
