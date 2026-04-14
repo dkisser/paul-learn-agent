@@ -75,7 +75,7 @@ class TerminalTool(ToolsProvider):
         return self.TERMINAL_SCHEMA
 
 
-    def do_invoke(self, tool_input: dict) -> str:
+    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
         import subprocess
         import os
 

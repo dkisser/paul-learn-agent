@@ -1,12 +1,17 @@
 # Paul Learn Agent
 
-> 一个娱乐性质的个人学习项目，主要目的是自己动手实现一个 AI Agent Harness。
+> 娱乐性质的个人学习项目，自己动手实现 Harness Agent。
 
 ## 简介
 
 这是一个轻量级的 Python AI Agent 框架，支持多 LLM 提供商（OpenAI、Anthropic、Ollama），具备工具调用能力。Agent 可以接收用户问题，自主决定是否调用工具获取更多信息，并给出最终回答。
 
 **⚠️ 本项目为学习/娱乐用途，不适合生产环境使用。**
+
+**📚 参考项目：**
+
+- 本项目的灵感和架构参考了 [hermes-agent](https://github.com/NousResearch/hermes-agent.git)，在此基础上进行了自己的实现和探索。
+- 部分实现参考了 [ShareAI Learn](https://learn.shareai.run/zh/s03/) 中的教程内容。
 
 ## 特性
 

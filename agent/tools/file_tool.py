@@ -24,7 +24,7 @@ class ReadFileTool(ToolsProvider):
     def get_schema(self, llm_provider: str) -> dict:
         return self.READ_FILE_SCHEMA
 
-    def do_invoke(self, tool_input: dict) -> str:
+    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
         from pathlib import Path
         path = Path(tool_input['path']).expanduser()
         if not path.exists():
@@ -90,7 +90,7 @@ class SearchFileTool(ToolsProvider):
         return self.SEARCH_FILES_SCHEMA
 
 
-    def do_invoke(self, tool_input: dict) -> str:
+    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
         import subprocess
         import shutil
         from pathlib import Path
@@ -183,7 +183,7 @@ class WriteFileTool(ToolsProvider):
     def get_schema(self, llm_provider: str) -> dict:
         return self.WRITE_FILE_SCHEMA
 
-    def do_invoke(self, tool_input: dict) -> str:
+    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
         from pathlib import Path
         import shutil
 

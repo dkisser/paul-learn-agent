@@ -4,7 +4,6 @@ from typing import runtime_checkable, Protocol
 @runtime_checkable
 class ToolsProvider(Protocol):
     """所有 Tools provider 都必须实现的协议"""
-
     def get_schema(self, llm_provider: str) -> dict:
         """获取不同provider下的工具定义
         (LLM不同，注册的tool格式也会不同，默认使用GPT的方式)"""
@@ -19,12 +18,12 @@ class ToolsProvider(Protocol):
 
         return tool_input
 
-    def invoke(self, tool_input: dict) -> str:
+    def invoke(self, tool_input: dict, todo_store=None) -> str:
         """调用工具"""
         input = self.normalize_input(tool_input)
-        return self.do_invoke(input)
+        return self.do_invoke(input, todo_store)
 
-    def do_invoke(self, tool_input: dict) -> str:
+    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
         """工具具体实现"""
         ...
 

@@ -5,6 +5,8 @@ from pathlib import Path
 
 from agent.config import get_config
 from agent.llm.provider import ProviderRegistry
+from agent.prompt_builder import TOOL_USE_ENFORCEMENT_GUIDANCE
+from agent.tools.todo_tool import TodoStore
 from agent.tools.tool_manager import registry
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -64,6 +66,7 @@ class Agent:
         self.tools = tools
         self.current_turn = 0
         self.messages = []
+        self.todo_store = TodoStore()
 
         #register tools
         self.tool_register()
@@ -72,6 +75,7 @@ class Agent:
         _modules = [
             "agent.tools.file_tool",
             "agent.tools.terminal_tool",
+            "agent.tools.todo_tool",
         ]
         import importlib
         for mod_name in _modules:
@@ -90,11 +94,20 @@ class Agent:
         tool = registry.get(tool_name)
         if not tool:
             raise ValueError(f"Unknown tool: {tool_name}")
-        return tool.invoke(tool_input)
+        return tool.invoke(tool_input, self.todo_store)
+
+    def _build_system_prompt(
+            self,
+            enforce_tool_use: bool = False
+    ):
+        if not enforce_tool_use:
+            return self.system_prompt
+        else:
+            return self.system_prompt + "\n" + TOOL_USE_ENFORCEMENT_GUIDANCE
 
     def _build_input(self, input: str) -> list:
         return [
-            {"role": "system", "content": self.system_prompt},
+            {"role": "system", "content": self._build_system_prompt(True)},
             {"role": "user", "content": input},
         ]
 
@@ -118,7 +131,10 @@ class Agent:
                 self.messages.append({"role": "assistant", "content": decision.message})
 
             if not decision.next_step == "tool_use":
-                return self.messages
+                return {
+                    "messages": self.messages,
+                    "todo_store": self.todo_store
+                }
 
             # tool_use
             for tool in decision.tool_calls:

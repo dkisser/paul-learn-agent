@@ -102,7 +102,7 @@ class AnthropicProvider(LLMProvider):
                     "type": "function",
                     "function": {
                         "name": block.name,
-                        "arguments": json.dumps(block.input),
+                        "arguments": json.dumps(block.input, ensure_ascii=False),
                     }
                 })
 
