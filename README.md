@@ -88,6 +88,7 @@ uv run python main.py
 - [x] Provider 注册机制
 - [x] 工具调用决策循环
 - [x] 基础工具实现（Terminal / 文件读写搜索）
+- [x] 子 Agent 协作能力（delegate_tool，支持单任务委派和批量并行）
 - [ ] Ollama Provider 实现（配置已就绪，Provider 待实现）
 - [ ] 更多交互方式
 
@@ -106,7 +107,11 @@ uv run python main.py
 
 ## 工具系统
 
-工具系统采用 Protocol 抽象 + 注册表模式，包含 Terminal、File、Todo 等工具集。详细架构设计和参数说明见 [工具系统设计文档](docs/tools.md)。
+工具系统采用 Protocol 抽象 + 注册表模式，包含 Terminal、File、Todo、Delegate 等工具集。详细架构设计和参数说明见 [工具系统设计文档](docs/tools.md)。
+
+## 测试
+
+`tests/` 目录存放了各模块的测试用例，是了解各项功能具体行为的最佳入口。
 
 ## 技术栈
 
