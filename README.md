@@ -100,6 +100,7 @@ uv run python main.py
 | [`agent-loop`](#) | 实现 Agent 自我循环能力。仅包含最核心的 agent loop，目标是理解 Agent 如何通过循环自主决策、持续交互。 |
 | [`base_tool`](#) | 实现基础工具集，包含工具抽象层和具体工具实现。详见 [工具系统设计文档](docs/tools.md)。 |
 | [`todo_tool`](#) | 引入任务管理工具 `todo`，让 Agent 在处理复杂任务时主动维护和追踪任务计划。详见 [工具系统设计文档](docs/tools.md)。 |
+| [`delegate_tool`](#) | 引入任务委派工具 `delegate`，支持将子任务分发给子 Agent 执行，实现多 Agent 协作能力。 |
 
 > 未来新增的 tag 会继续在这里记录，每个 tag 都是独立的学习节点。
 
