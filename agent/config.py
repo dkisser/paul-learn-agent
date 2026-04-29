@@ -26,13 +26,8 @@ class LLMConfig(BaseModel):
     )
     anthropic_base_url: str | None = Field(default=None, alias="ANTHROPIC_BASE_URL")
 
-    # Ollama
-    ollama_base_url: str = Field(
-        default="http://localhost:11434", alias="OLLAMA_BASE_URL"
-    )
-    ollama_model: str = Field(default="llama3", alias="OLLAMA_MODEL")
-
     # Agent
+    workspace_path: str = Field(default="./", alias="WORKSPACE_PATH")
 
 
 def get_config() -> LLMConfig:

@@ -4,7 +4,7 @@
 
 ## 简介
 
-这是一个轻量级的 Python AI Agent 框架，支持多 LLM 提供商（OpenAI、Anthropic、Ollama），具备工具调用能力。Agent 可以接收用户问题，自主决定是否调用工具获取更多信息，并给出最终回答。
+这是一个轻量级的 Python AI Agent 框架，支持多 LLM 提供商（OpenAI、Anthropic），具备工具调用能力。Agent 可以接收用户问题，自主决定是否调用工具获取更多信息，并给出最终回答。
 
 **⚠️ 本项目为学习/娱乐用途，不适合生产环境使用。**
 
@@ -15,7 +15,7 @@
 
 ## 特性
 
-- **多 LLM 提供商**: 通过 `.env` 配置即可切换 OpenAI / Anthropic / Ollama
+- **多 LLM 提供商**: 通过 `.env` 配置即可切换 OpenAI / Anthropic
 - **Provider 抽象**: 基于 Protocol 的干净抽象，易于扩展新的 LLM 后端
 - **工具调用循环**: 内置 ReAct 风格的 tool-use 循环，自动迭代直到得出答案
 - **消息格式转换**: 内部统一使用 OpenAI 格式消息，各 Provider 负责适配转换
@@ -69,11 +69,6 @@ OPENAI_MODEL=gpt-4o
 # LLM_PROVIDER=anthropic
 # ANTHROPIC_API_KEY=your-api-key
 # ANTHROPIC_MODEL=claude-sonnet-4-6
-
-# 或 Ollama 配置（尚未实现 Provider）
-# LLM_PROVIDER=ollama
-# OLLAMA_BASE_URL=http://localhost:11434
-# OLLAMA_MODEL=llama3
 ```
 
 ### 3. 运行
@@ -89,7 +84,6 @@ uv run python main.py
 - [x] 工具调用决策循环
 - [x] 基础工具实现（Terminal / 文件读写搜索）
 - [x] 子 Agent 协作能力（delegate_tool，支持单任务委派和批量并行）
-- [ ] Ollama Provider 实现（配置已就绪，Provider 待实现）
 - [ ] 更多交互方式
 
 ## Tag 列表
@@ -116,3 +110,7 @@ uv run python main.py
 ## 技术栈
 
 - Python 3.12+
+
+## 许可证
+
+本项目采用 [AGPL-3.0](LICENSE) 开源协议。如果你使用了本项目的代码，你的项目也必须以 AGPL-3.0 协议开源。详见 [LICENSE](LICENSE) 文件。
