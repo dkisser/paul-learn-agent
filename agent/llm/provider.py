@@ -19,8 +19,10 @@ class LLMProvider(Protocol):
         """将内部消息格式转换为 provider 原生格式。"""
         ...
 
-    def complete(self, messages: list[dict]) -> Decision:
-        """向 LLM 发送消息并返回标准化的 Decision。"""
+    def complete(self, messages: list[dict], tools=None) -> Decision:
+        """向 LLM 发送消息并返回标准化的 Decision。
+        :param tools:
+        """
         ...
 
 

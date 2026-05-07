@@ -30,25 +30,33 @@ class AgentState:
 from agent.agent_type import Decision
 
 
-_DEFAULT_TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "search",
-            "description": "Search data what you need",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The query content",
-                    }
-                },
-                "required": ["query"]
-            },
-        }
-    },
-]
+def tool_register():
+    _modules = [
+        "agent.tools.file_tool",
+        "agent.tools.terminal_tool",
+        "agent.tools.todo_tool",
+        "agent.tools.delegate_tool",
+    ]
+    import importlib
+    for mod_name in _modules:
+        try:
+            importlib.import_module(mod_name)
+        except Exception as e:
+            logger.warning("Could not import tool module %s: %s", mod_name, e)
+
+
+def _build_tools(llm_provider: str, tool_names: list[str] = None):
+    tools = registry.available()
+    result = []
+    for tool_name in tools:
+        if tool_names and tool_name not in tool_names:
+            continue
+        tool = registry.get(tool_name)
+        result.append({
+            "type": "function",
+            "function": tool.get_schema(llm_provider)
+        })
+    return result
 
 
 class Agent:
@@ -58,43 +66,34 @@ class Agent:
         max_turn: int = 20,
         tools=None,
         system_prompt: str = "",
+        workspace_path: str = None,
     ):
-        if tools is None:
-            tools = _DEFAULT_TOOLS
+
+        # register tools
+        tool_register()
+
         self.max_turn = max_turn
         self.system_prompt = system_prompt
-        self.tools = tools
+        self.tools = _build_tools(get_config().provider, tools)
         self.current_turn = 0
         self.messages = []
         self.todo_store = TodoStore()
+        self.workspace_path = workspace_path or get_config().workspace_path
 
-        #register tools
-        self.tool_register()
-
-    def tool_register(self):
-        _modules = [
-            "agent.tools.file_tool",
-            "agent.tools.terminal_tool",
-            "agent.tools.todo_tool",
-        ]
-        import importlib
-        for mod_name in _modules:
-            try:
-                importlib.import_module(mod_name)
-            except Exception as e:
-                logger.warning("Could not import tool module %s: %s", mod_name, e)
 
     def _invoke_llm(self, messages) -> Decision:
         provider = ProviderRegistry.get(get_config().provider)
-        decision = provider.complete(messages)
+        decision = provider.complete(messages, self.tools)
         self.current_turn += 1
         return decision
+
 
     def _invoke_tool(self, tool_name: str, tool_input: str) -> str:
         tool = registry.get(tool_name)
         if not tool:
             raise ValueError(f"Unknown tool: {tool_name}")
         return tool.invoke(tool_input, self.todo_store)
+
 
     def _build_system_prompt(
             self,
@@ -104,6 +103,7 @@ class Agent:
             return self.system_prompt
         else:
             return self.system_prompt + "\n" + TOOL_USE_ENFORCEMENT_GUIDANCE
+
 
     def _build_input(self, input: str) -> list:
         return [
@@ -116,6 +116,16 @@ class Agent:
         messages = self._build_input(input)
         self.messages = [*self.messages, *messages]
         while True:
+            # max turn check
+            if self.current_turn >= self.max_turn:
+                return {
+                    "messages": self.messages,
+                    "todo_store": self.todo_store,
+                    "final_response": "Maximum turn exceeded",
+                    "completed": False,
+                    "interrupted": False,
+                    "api_calls": len([m for m in self.messages if m.get("role") == "tool"])
+                }
 
             decision = self._invoke_llm(self.messages)
 
@@ -133,7 +143,11 @@ class Agent:
             if not decision.next_step == "tool_use":
                 return {
                     "messages": self.messages,
-                    "todo_store": self.todo_store
+                    "todo_store": self.todo_store,
+                    "final_response": self.messages[-1].get("content"),
+                    "completed": True,
+                    "interrupted": False,
+                    "api_calls": len([m for m in self.messages if m.get("role") == "tool"])
                 }
 
             # tool_use
@@ -142,6 +156,7 @@ class Agent:
                 tool_result = self._invoke_tool(fn['name'], fn['arguments'])
                 # 从 decision.tool_calls 中获取对应的 tool_call_id
                 self._append_tool_result(decision, fn['name'], tool_result)
+
 
     def _append_tool_result(self, decision: Decision, tool_name, tool_result: str):
         tool_call_id = ""

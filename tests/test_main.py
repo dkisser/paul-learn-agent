@@ -63,3 +63,17 @@ def test_todo_tool():
     print_result( messages)
     todo_store = res.get('todo_store')
     console.print(f"Todo list: {JSON.from_data(todo_store.read() if todo_store else {}, indent=2)}")
+
+
+def test_delegate_tool():
+    agent = Agent(system_prompt="""
+            You are a helpful Travel Planning agent.
+            """)
+
+    question = "这周末我想去巴厘岛玩，有哪些好玩的景点，我怎么玩？机票、酒店、景点的路线使用subagent帮我规划下"
+    print(f"Task: {question}")
+    res = agent.invoke(question)
+    messages = res.get("messages", [])
+    print_result( messages)
+    todo_store = res.get('todo_store')
+    console.print(f"Todo list: {JSON.from_data(todo_store.read() if todo_store else {}, indent=2)}")

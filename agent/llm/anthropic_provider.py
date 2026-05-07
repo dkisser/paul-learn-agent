@@ -82,7 +82,7 @@ class AnthropicProvider(LLMProvider):
             "messages": anthropic_messages,
         }
 
-    def complete(self, messages: list[dict]) -> Decision:
+    def complete(self, messages: list[dict], tools=None) -> Decision:
         normalized = self.normalize(messages)
         response = self.client.messages.create(
             model=self.model,

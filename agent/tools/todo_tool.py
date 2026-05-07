@@ -6,7 +6,6 @@ import json
 VALID_STATUSES = {"pending", "in_progress", "completed", "cancelled"}
 
 
-
 class TodoStore:
 
     """Todo 存储类
