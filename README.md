@@ -37,7 +37,9 @@
 │       ├── tool_manager.py     # ToolsProvider Protocol + ToolsRegistry 注册表
 │       ├── terminal_tool.py    # 终端执行工具（前台/后台/超时/PTY）
 │       ├── file_tool.py        # 文件工具（read_file / write_file / search_files）
-│       └── todo_tool.py        # 任务管理工具（待办列表增删改查）
+│       ├── todo_tool.py        # 任务管理工具（待办列表增删改查）
+│       ├── delegate_tool.py    # 任务委派工具（delegate_task，支持单任务/批量并行子 Agent）
+│       └── skills_tool.py      # 技能管理工具（skills_list / skill_view，加载技能知识）
 ├── resources/prompt/       # 提示词资源
 ├── pyproject.toml          # 项目依赖（uv 管理）
 └── .env                    # 环境变量（需自行创建）
@@ -84,6 +86,7 @@ uv run python main.py
 - [x] 工具调用决策循环
 - [x] 基础工具实现（Terminal / 文件读写搜索）
 - [x] 子 Agent 协作能力（delegate_tool，支持单任务委派和批量并行）
+- [x] 技能管理（skills_tool，支持技能列表查看和技能内容加载）
 - [ ] 更多交互方式
 
 ## Tag 列表
@@ -101,7 +104,7 @@ uv run python main.py
 
 ## 工具系统
 
-工具系统采用 Protocol 抽象 + 注册表模式，包含 Terminal、File、Todo、Delegate 等工具集。详细架构设计和参数说明见 [工具系统设计文档](docs/tools.md)。
+工具系统采用 Protocol 抽象 + 注册表模式，包含 Terminal、File、Todo、Delegate、Skill 等工具集。详细架构设计和参数说明见 [工具系统设计文档](docs/tools.md)。
 
 ## 测试
 

@@ -152,3 +152,48 @@ agent/tools/
 **任务状态：** `pending` → `in_progress` → `completed` / `cancelled`
 
 **设计理念：** 引导 LLM 在处理复杂任务时主动维护任务计划，同一时刻只有一个 `in_progress` 项。完成即标记，失败则取消并添加修订项。调用时始终返回完整的当前列表，方便 LLM 感知全局进度。
+
+### Skill（技能管理）
+
+技能系统允许 Agent 加载和使用预定义的知识模板。每个技能是一个包含 `SKILL.md` 的目录，可附带 `references/`、`templates/`、`assets/`、`scripts/` 等子目录存放关联文件。
+
+**技能目录结构：**
+
+```
+skills/
+├── web-scraping/              # 技能目录名
+│   ├── SKILL.md               # 技能主文件（必须），包含 frontmatter 元数据和正文
+│   ├── references/
+│   │   └── api-reference.md   # 参考文档
+│   ├── templates/
+│   │   └── request-template.py # 代码模板
+│   ├── assets/
+│   │   └── demo.png           # 图片等资源
+│   └── scripts/
+│       └── setup.sh           # 辅助脚本
+```
+
+**SKILL.md frontmatter 格式：**
+
+```yaml
+---
+name: web-scraping
+description: Web 数据抓取技能，用于从网页中提取结构化数据
+related_skills:
+  - data-processing
+  - http-client
+---
+
+技能正文内容...
+```
+
+| 工具 | 功能 | 参数 |
+|------|------|------|
+| `skills_list` | 列出所有可用技能 | `category`（可选）— 按分类过滤 |
+| `skill_view` | 查看技能详情或关联文件 | `name`（必填）— 技能名称；`file_path`（可选）— 关联文件路径，如 `references/api.md` |
+
+**skill_view 返回内容：**
+- 首次调用（不传 `file_path`）：返回技能的元数据（name、description、related_skills）、正文内容、关联文件列表
+- 再次调用（传入 `file_path`）：返回指定关联文件的内容
+
+**设计理念：** 将常见任务的专业知识封装为可复用的技能卡片，Agent 在处理特定领域任务时自主加载相关技能，提升执行质量。技能与工具解耦，工具负责"怎么做"，技能负责"做什么"。
