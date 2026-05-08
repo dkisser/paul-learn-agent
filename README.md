@@ -4,7 +4,7 @@
 
 ## 简介
 
-这是一个轻量级的 Python AI Agent 框架，支持多 LLM 提供商（OpenAI、Anthropic），具备工具调用能力。Agent 可以接收用户问题，自主决定是否调用工具获取更多信息，并给出最终回答。
+这是一个轻量级的 Python AI Agent 框架，支持多 LLM 提供商（OpenAI、Anthropic、DeepSeek），具备工具调用能力。Agent 可以接收用户问题，自主决定是否调用工具获取更多信息，并给出最终回答。
 
 **⚠️ 本项目为学习/娱乐用途，不适合生产环境使用。**
 
@@ -15,7 +15,7 @@
 
 ## 特性
 
-- **多 LLM 提供商**: 通过 `.env` 配置即可切换 OpenAI / Anthropic
+- **多 LLM 提供商**: 通过 `.env` 配置即可切换 OpenAI / Anthropic / DeepSeek
 - **Provider 抽象**: 基于 Protocol 的干净抽象，易于扩展新的 LLM 后端
 - **工具调用循环**: 内置 ReAct 风格的 tool-use 循环，自动迭代直到得出答案
 - **消息格式转换**: 内部统一使用 OpenAI 格式消息，各 Provider 负责适配转换
@@ -32,7 +32,8 @@
 │   ├── llm/
 │   │   ├── provider.py     # LLMProvider Protocol 和 ProviderRegistry
 │   │   ├── openai_provider.py    # OpenAI SDK 实现
-│   │   └── anthropic_provider.py # Anthropic SDK 实现
+│   │   ├── anthropic_provider.py # Anthropic SDK 实现
+│   │   └── deepseek_provider.py  # DeepSeek SDK 实现（基于 OpenAI SDK）
 │   └── tools/
 │       ├── tool_manager.py     # ToolsProvider Protocol + ToolsRegistry 注册表
 │       ├── terminal_tool.py    # 终端执行工具（前台/后台/超时/PTY）
@@ -61,11 +62,17 @@ uv sync
 
 ```env
 # 选择 LLM 提供商
-LLM_PROVIDER=openai
+LLM_PROVIDER=deepseek
 
-# OpenAI 配置
-OPENAI_API_KEY=your-api-key
-OPENAI_MODEL=gpt-4o
+# DeepSeek 配置（兼容 OpenAI API 格式）
+OPENAI_API_KEY=your-deepseek-api-key
+OPENAI_BASE_URL=https://api.deepseek.com
+OPENAI_MODEL=deepseek-chat
+
+# 或 OpenAI 配置
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=your-api-key
+# OPENAI_MODEL=gpt-4o
 
 # 或 Anthropic 配置
 # LLM_PROVIDER=anthropic
@@ -81,7 +88,7 @@ uv run python main.py
 
 ## 当前状态
 
-- [x] 多 LLM 提供商支持（OpenAI / Anthropic）
+- [x] 多 LLM 提供商支持（OpenAI / Anthropic / DeepSeek）
 - [x] Provider 注册机制
 - [x] 工具调用决策循环
 - [x] 基础工具实现（Terminal / 文件读写搜索）
@@ -99,6 +106,7 @@ uv run python main.py
 | [`base_tool`](#) | 实现基础工具集，包含工具抽象层和具体工具实现。详见 [工具系统设计文档](docs/tools.md)。 |
 | [`todo_tool`](#) | 引入任务管理工具 `todo`，让 Agent 在处理复杂任务时主动维护和追踪任务计划。详见 [工具系统设计文档](docs/tools.md)。 |
 | [`delegate_tool`](#) | 引入任务委派工具 `delegate`，支持将子任务分发给子 Agent 执行，实现多 Agent 协作能力。 |
+| [`skill_tool`](#) | 添加技能管理系统，支持通过 `skills_tool` 加载和管理预定义技能知识，让 Agent 可以复用结构化技能。 |
 
 > 未来新增的 tag 会继续在这里记录，每个 tag 都是独立的学习节点。
 
