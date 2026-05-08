@@ -3,7 +3,6 @@ from pathlib import Path
 from agent.agent import Agent
 
 _PROJECT_ROOT = Path(__file__).resolve().parent
-_PROMPT_PATH = _PROJECT_ROOT / "resources" / "prompt" / "Research.txt"
 
 
 def main():

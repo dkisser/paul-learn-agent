@@ -12,3 +12,19 @@ TOOL_USE_ENFORCEMENT_GUIDANCE = (
     "(b) deliver a final result to the user. Responses that only describe intentions "
     "without acting are not acceptable."
 )
+
+SKILL_ENFORCEMENT_GUIDANCE = (
+        "# Skills (mandatory)\n"
+        "Before replying, scan the skills below. If one clearly matches your task, "
+        "load it with skill_view(name) and follow its instructions. "
+        "If a skill has issues, fix it with skill_manage(action='patch').\n"
+        "After difficult/iterative tasks, offer to save as a skill. "
+        "If a skill you loaded was missing steps, had wrong commands, or needed "
+        "pitfalls you discovered, update it before finishing.\n"
+        "\n"
+        "<available_skills>\n"
+        + "{SKILLS}" + "\n"
+        "</available_skills>\n"
+        "\n"
+        "If none match, proceed normally without loading a skill."
+    )

@@ -18,12 +18,15 @@ class ToolsProvider(Protocol):
 
         return tool_input
 
-    def invoke(self, tool_input: dict, todo_store=None) -> str:
+    def invoke(self, tool_input: dict, **kwargs) -> str:
         """调用工具"""
-        input = self.normalize_input(tool_input)
-        return self.do_invoke(input, todo_store)
+        try:
+            input = self.normalize_input(tool_input)
+        except Exception:
+            return f"JSON Serialize Failed,invalid input. You must use json"
+        return self.do_invoke(input, **kwargs)
 
-    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
+    def do_invoke(self, tool_input: dict, **kwargs) -> str:
         """工具具体实现"""
         ...
 

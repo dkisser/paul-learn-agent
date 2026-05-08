@@ -12,7 +12,7 @@ load_dotenv(_ENV_PATH)
 class LLMConfig(BaseModel):
     model_config = {"populate_by_name": True}
 
-    provider: str = Field(default="openai", alias="LLM_PROVIDER")
+    provider: str = Field(default="deepseek", alias="LLM_PROVIDER")
 
     # OpenAI
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
@@ -26,7 +26,7 @@ class LLMConfig(BaseModel):
     )
     anthropic_base_url: str | None = Field(default=None, alias="ANTHROPIC_BASE_URL")
 
-    # Agent
+    # Agent root path
     workspace_path: str = Field(default="./", alias="WORKSPACE_PATH")
 
 

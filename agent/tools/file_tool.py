@@ -40,7 +40,7 @@ class ReadFileTool(ToolsProvider):
             return "Error: 缺少必填参数 'path'，请提供要读取的文件路径。"
         return None
 
-    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
+    def do_invoke(self, tool_input: dict, **kwargs) -> str:
         from pathlib import Path
 
         error = self._validate(tool_input)
@@ -137,7 +137,7 @@ class SearchFileTool(ToolsProvider):
             return "Error: 缺少必填参数 'pattern'，请提供搜索模式或文件名模式。"
         return None
 
-    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
+    def do_invoke(self, tool_input: dict, **kwargs) -> str:
         import subprocess
         import shutil
         from pathlib import Path
@@ -250,7 +250,7 @@ class WriteFileTool(ToolsProvider):
             return "Error: 缺少必填参数 'content'，请提供要写入的文件内容。"
         return None
 
-    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
+    def do_invoke(self, tool_input: dict, **kwargs) -> str:
         from pathlib import Path
         import shutil
 

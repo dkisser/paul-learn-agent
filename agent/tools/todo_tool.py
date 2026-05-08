@@ -8,7 +8,7 @@ VALID_STATUSES = {"pending", "in_progress", "completed", "cancelled"}
 
 class TodoStore:
 
-    """Todo 存储类
+    """
 
         round_since_update: 连续多少轮过去了，模型还没有更新这份计划。(用于提醒模型去更新计划)
         items的每个数据结构如下：
@@ -124,7 +124,8 @@ class TodoTool(ToolsProvider):
     def get_schema(self, llm_provider: str) -> dict:
         return self.TODO_SCHEMA
 
-    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
+    def do_invoke(self, tool_input: dict, **kwargs) -> str:
+        todo_store = kwargs.get("todo_store")
         if todo_store is None:
             raise ValueError("todo_store is required")
         todo_store.write(tool_input.get("todos", []), tool_input.get("merge", False))

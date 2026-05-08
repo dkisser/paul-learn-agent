@@ -107,7 +107,7 @@ class DelegateTool(ToolsProvider):
     def get_schema(self, llm_provider: str) -> dict:
         return self.DELEGATE_TASK_SCHEMA
 
-    def do_invoke(self, tool_input: dict, todo_store=None) -> str:
+    def do_invoke(self, tool_input: dict, **kwargs) -> str:
         goal = tool_input.get("goal", "")
         context = tool_input.get("context")
         toolsets = tool_input.get("toolsets")
