@@ -4,7 +4,6 @@ import time
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any
 
 import openai
 
@@ -17,10 +16,17 @@ from agent.prompt_builder import (
 )
 from agent.tools.skills_tool import SkillsStore
 from agent.tools.todo_tool import TodoStore
-from agent.tools.tool_manager import registry
+from agent.tools.tool_manager import registry, check_tool_permission
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 logger = logging.getLogger(__name__)
+
+# 确保 logging 输出可见（pytest 等环境中默认可能不输出 WARNING）
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
 
 
 @dataclass
@@ -120,6 +126,14 @@ class Agent:
             "todo_store": self.todo_store,
             "skill_store": self.skill_store,
         }
+        decision = check_tool_permission(tool_name, tool_input)
+        if decision["behavior"] == "deny":
+            return decision.get("reason", "tool use denied for current turn")
+        if decision["behavior"] == "ask":
+            # todo 暂时没做human in loop
+            logger.warning(
+                "Tool [%s] need check: %s", tool_name, decision.get("reason", "nothing")
+            )
         return tool.invoke(tool_input, **params)
 
     def _build_system_prompt(self, enforce_tool_use: bool = False):
@@ -189,7 +203,10 @@ class Agent:
                 self.messages = self._compact(self.messages, normalized_messages)
                 decision = self._invoke_llm(self.messages)
             except Exception as e:
-                logger.error("LLM call failed, messages: %s", json.dumps(self.messages, ensure_ascii=False))
+                logger.error(
+                    "LLM call failed, messages: %s",
+                    json.dumps(self.messages, ensure_ascii=False),
+                )
                 if self._is_retryable_error(e):
                     logger.warning(
                         "LLM call failed with retryable error: %s. Retrying in 5s...", e
@@ -234,16 +251,13 @@ class Agent:
             # todo 暂时不在每次请求结束之后做token统计并缓存，后面优化
             if _compressor.last_prompt_tokens > 0:
                 _real_tokens = (
-                        _compressor.last_prompt_tokens
-                        + _compressor.last_completion_tokens
+                    _compressor.last_prompt_tokens + _compressor.last_completion_tokens
                 )
             else:
                 _real_tokens = estimate_messages_tokens_rough(messages)
 
             if _compressor.should_compress(_real_tokens):
-                return _compressor.compress(
-                    normalized_messages
-                )
+                return _compressor.compress(normalized_messages)
         return messages
 
     def _append_tool_result(self, tool_call_id: str, tool_result: str):
