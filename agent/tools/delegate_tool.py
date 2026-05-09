@@ -8,7 +8,7 @@ from agent.config import get_config
 from agent.tools.tool_manager import ToolsProvider, registry
 
 
-MAX_CONCURRENT_CHILDREN=3
+MAX_CONCURRENT_CHILDREN = 3
 
 
 class DelegateTool(ToolsProvider):
@@ -75,13 +75,15 @@ class DelegateTool(ToolsProvider):
                         "type": "object",
                         "properties": {
                             "goal": {"type": "string", "description": "Task goal"},
-                            "context": {"type": "string", "description": "Task-specific context"},
+                            "context": {
+                                "type": "string",
+                                "description": "Task-specific context",
+                            },
                             "toolsets": {
                                 "type": "array",
                                 "items": {"type": "string"},
                                 "description": "Toolsets for this specific task. Use 'web' for network access, 'terminal' for shell.",
                             },
-
                         },
                         "required": ["goal"],
                     },
@@ -115,19 +117,22 @@ class DelegateTool(ToolsProvider):
         max_iterations = tool_input.get("max_iterations", 50)
         final_tasks = []
         if not tasks:
-            final_tasks.append({
-                "goal": goal,
-                "context": context,
-                "toolsets": toolsets,
-            })
+            final_tasks.append(
+                {
+                    "goal": goal,
+                    "context": context,
+                    "toolsets": toolsets,
+                }
+            )
         else:
             final_tasks = tasks
 
         results = []
         n_tasks = len(final_tasks)
         if len(final_tasks) == 1:
-            self._invoke_delegate_task(0, final_tasks[0], max_iterations)
-        else :
+            result = self._invoke_delegate_task(0, final_tasks[0], max_iterations)
+            return json.dumps([result], ensure_ascii=False)
+        else:
             # 批量执行模式
             # Batch -- run in parallel with per-task progress lines
             completed_count = 0
@@ -159,7 +164,9 @@ class DelegateTool(ToolsProvider):
 
                     # Print per-task completion line above the spinner
                     idx = entry["task_index"]
-                    label = task_labels[idx] if idx < len(task_labels) else f"Task {idx}"
+                    label = (
+                        task_labels[idx] if idx < len(task_labels) else f"Task {idx}"
+                    )
                     dur = entry.get("duration_seconds", 0)
                     status = entry.get("status", "?")
                     icon = "✓" if status == "completed" else "✗"
@@ -168,23 +175,29 @@ class DelegateTool(ToolsProvider):
 
             # Sort by task_index so results match input order
             results.sort(key=lambda r: r["task_index"])
-            return json.dumps(results, ensure_ascii= False)
+            return json.dumps(results, ensure_ascii=False)
 
-
-    def _invoke_delegate_task(self, task_index: int, task: dict, max_iterations: int) -> Dict[str, Any]:
+    def _invoke_delegate_task(
+        self, task_index: int, task: dict, max_iterations: int
+    ) -> Dict[str, Any]:
         task_start = time.monotonic()
         goal = task.get("goal", "")
         if not goal:
             raise ValueError("goal is required")
         context = task.get("context")
         toolsets = task.get("toolsets")
-        system_prompt = self._build_child_system_prompt(goal, context, workspace_path=get_config().workspace_path)
-        agent = Agent(system_prompt=system_prompt, tools=toolsets, max_turn=max_iterations)
+        system_prompt = self._build_child_system_prompt(
+            goal, context, workspace_path=get_config().workspace_path
+        )
+        agent = Agent(
+            system_prompt=system_prompt, tools=toolsets, max_turn=max_iterations
+        )
         result = agent.invoke(goal)
         return self._build_child_result(task_index, result, task_start)
 
-
-    def _build_child_result(self, task_index: int, result, task_start) -> Dict[str, Any]:
+    def _build_child_result(
+        self, task_index: int, result, task_start
+    ) -> Dict[str, Any]:
         duration = round(time.monotonic() - task_start, 2)
         summary = result.get("final_response") or ""
         completed = result.get("completed", False)
@@ -211,7 +224,7 @@ class DelegateTool(ToolsProvider):
                 if not isinstance(msg, dict):
                     continue
                 if msg.get("role") == "assistant":
-                    for tc in (msg.get("tool_calls") or []):
+                    for tc in msg.get("tool_calls") or []:
                         fn = tc.get("function", {})
                         entry_t = {
                             "tool": fn.get("name", "unknown"),
@@ -223,9 +236,7 @@ class DelegateTool(ToolsProvider):
                             trace_by_id[tc_id] = entry_t
                 elif msg.get("role") == "tool":
                     content = msg.get("content", "")
-                    is_error = bool(
-                        content and "error" in content[:80].lower()
-                    )
+                    is_error = bool(content and "error" in content[:80].lower())
                     result_meta = {
                         "result_bytes": len(content),
                         "status": "error" if is_error else "ok",
@@ -263,13 +274,12 @@ class DelegateTool(ToolsProvider):
         print(entry)
         return entry
 
-
     def _build_child_system_prompt(
-            selft,
-            goal: str,
-            context: Optional[str] = None,
-            *,
-            workspace_path: Optional[str] = None,
+        selft,
+        goal: str,
+        context: Optional[str] = None,
+        *,
+        workspace_path: Optional[str] = None,
     ) -> str:
         """Build a focused system prompt for a child agent."""
         parts = [

@@ -1,12 +1,15 @@
+import json
 import logging
 import time
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
+from typing import Any
 
 import openai
 
 from agent.config import get_config
+from agent.context_compressor import ContextCompressor, estimate_messages_tokens_rough
 from agent.llm.provider import ProviderRegistry
 from agent.prompt_builder import (
     TOOL_USE_ENFORCEMENT_GUIDANCE,
@@ -88,6 +91,7 @@ class Agent:
         self.skill_store = SkillsStore(
             workspace_path=custom_skill_path or self.workspace_path
         )
+        self.cnotext_compressor = ContextCompressor(provider=get_config().provider)
 
     def _invoke_llm(self, messages) -> Decision:
         provider = ProviderRegistry.get(get_config().provider)
@@ -121,27 +125,47 @@ class Agent:
     def _build_system_prompt(self, enforce_tool_use: bool = False):
         if not enforce_tool_use:
             return self.system_prompt
-        else:
+
+        skill_list = self.skill_store.skill_list()
+        parts = [self.system_prompt, TOOL_USE_ENFORCEMENT_GUIDANCE]
+
+        if skill_list:
             skills = "\n".join(
-                [
-                    f" - {skill['name']}: {skill['description']}"
-                    for skill in self.skill_store.skill_list()
-                ]
+                f" - {skill['name']}: {skill['description']}" for skill in skill_list
             )
-            skill_guidance = SKILL_ENFORCEMENT_GUIDANCE.format(SKILLS=skills)
-            return (
-                self.system_prompt
-                + "\n"
-                + TOOL_USE_ENFORCEMENT_GUIDANCE
-                + "\n"
-                + skill_guidance
-            )
+            parts.append(SKILL_ENFORCEMENT_GUIDANCE.format(SKILLS=skills))
+
+        return "\n".join(parts)
 
     def _build_input(self, input: str) -> list:
         return [
             {"role": "system", "content": self._build_system_prompt(True)},
             {"role": "user", "content": input},
         ]
+
+    def _normalize_messages(self, messages):
+        """合并连续的同角色消息，避免 API 报错。"""
+        if not messages:
+            return messages
+
+        normalized = [messages[0]]
+        for msg in messages[1:]:
+            last = normalized[-1]
+            # 合并连续的 user 消息
+            if msg.get("role") == "user" and last.get("role") == "user":
+                last["content"] = f"{last.get('content', '')}\n{msg.get('content', '')}"
+                continue
+            # 合并连续的 assistant 消息（都不含 tool_calls）
+            if (
+                msg.get("role") == "assistant"
+                and last.get("role") == "assistant"
+                and not msg.get("tool_calls")
+                and not last.get("tool_calls")
+            ):
+                last["content"] = f"{last.get('content', '')}\n{msg.get('content', '')}"
+                continue
+            normalized.append(msg)
+        return normalized
 
     def invoke(self, input: str):
         messages = self._build_input(input)
@@ -161,8 +185,11 @@ class Agent:
                 }
 
             try:
+                normalized_messages = self._normalize_messages(self.messages)
+                self.messages = self._compact(self.messages, normalized_messages)
                 decision = self._invoke_llm(self.messages)
             except Exception as e:
+                logger.error("LLM call failed, messages: %s", json.dumps(self.messages, ensure_ascii=False))
                 if self._is_retryable_error(e):
                     logger.warning(
                         "LLM call failed with retryable error: %s. Retrying in 5s...", e
@@ -199,15 +226,27 @@ class Agent:
             for tool in decision.tool_calls:
                 fn = tool["function"]
                 tool_result = self._invoke_tool(fn["name"], fn["arguments"])
-                # 从 decision.tool_calls 中获取对应的 tool_call_id
-                self._append_tool_result(decision, fn["name"], tool_result)
+                self._append_tool_result(tool["id"], tool_result)
 
-    def _append_tool_result(self, decision: Decision, tool_name, tool_result: str):
-        tool_call_id = ""
-        for tc in decision.tool_calls:
-            if tc["function"]["name"] == tool_name:
-                tool_call_id = tc["id"]
-                break
+    def _compact(self, messages: list, normalized_messages: list):
+        _compressor = self.cnotext_compressor
+        if _compressor.threshold_tokens > 0:
+            # todo 暂时不在每次请求结束之后做token统计并缓存，后面优化
+            if _compressor.last_prompt_tokens > 0:
+                _real_tokens = (
+                        _compressor.last_prompt_tokens
+                        + _compressor.last_completion_tokens
+                )
+            else:
+                _real_tokens = estimate_messages_tokens_rough(messages)
+
+            if _compressor.should_compress(_real_tokens):
+                return _compressor.compress(
+                    normalized_messages
+                )
+        return messages
+
+    def _append_tool_result(self, tool_call_id: str, tool_result: str):
         self.messages.append(
             {"role": "tool", "tool_call_id": tool_call_id, "content": tool_result}
         )
